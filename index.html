@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finderish — Find Your Unclaimed Money Today</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        script: ['Satisfy', 'cursive'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0b0c;
+            color: #fff;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .font-script { font-family: 'Satisfy', cursive; }
+
+        /* Scroll Reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            filter: blur(4px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-60px);
+            filter: blur(4px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+            filter: blur(0);
+        }
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(60px);
+            filter: blur(4px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+            filter: blur(0);
+        }
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            filter: blur(4px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-scale.visible {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0);
+        }
+
+        /* Stagger children */
+        .stagger .reveal:nth-child(1) { transition-delay: 0ms; }
+        .stagger .reveal:nth-child(2) { transition-delay: 100ms; }
+        .stagger .reveal:nth-child(3) { transition-delay: 200ms; }
+        .stagger .reveal:nth-child(4) { transition-delay: 300ms; }
+        .stagger .reveal:nth-child(5) { transition-delay: 400ms; }
+        .stagger .reveal:nth-child(6) { transition-delay: 500ms; }
+
+        /* Pulse glow */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3); }
+            50% { box-shadow: 0 0 40px rgba(245,158,11,0.6); }
+        }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+        /* Countdown pulse */
+        @keyframes countdown-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .countdown-pulse { animation: countdown-pulse 1s ease-in-out infinite; }
+
+        /* Floating animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+
+        /* Shimmer */
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg, #f59e0b, #fde68a, #f59e0b, #fde68a, #f59e0b);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+
+        /* Star rating glow */
+        .star-glow { filter: drop-shadow(0 0 4px rgba(245,158,11,0.6)); }
+
+        /* Progress bar animation */
+        @keyframes progress-fill {
+            from { width: 0%; }
+        }
+        .progress-animated { animation: progress-fill 2s ease-out forwards; }
+
+        /* Toast */
+        .toast {
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0b0b0c; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Mobile menu */
+        .mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .mobile-menu.open { max-height: 400px; }
+    </style>
+</head>
+<body>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast fixed top-24 right-4 z-[100] bg-[#1a1a1a] border border-amber-500/30 rounded-2xl px-6 py-4 flex items-center gap-3 shadow-2xl">
+    <div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="check" class="w-4 h-4 text-amber-500"></i>
+    </div>
+    <p id="toast-msg" class="text-sm text-slate-200">Message sent successfully!</p>
+</div>
+
+<!-- ===== COUNTDOWN BAR ===== -->
+<div class="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-3 sm:gap-6">
+        <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-[#0b0b0c]"></i>
+            <span class="text-xs sm:text-sm font-semibold text-[#0b0b0c] tracking-wide">OFFER ENDS IN</span>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <div class="countdown-pulse bg-[#0b0b0c] text-amber-400 font-bold text-sm sm:text-base px-2 sm:px-3 py-1 rounded-lg" id="cd-hours">47</div>
+            <span class="text-[#0b0b0c] font-bold">:</span>
+            <div class="countdown-pulse bg-[#0b0b0c] text-amber-400 font-bold text-sm sm:text-base px-2 sm:px-3 py-1 rounded-lg" id="cd-mins">59</div>
+            <span class="text-[#0b0b0c] font-bold">:</span>
+            <div class="countdown-pulse bg-[#0b0b0c] text-amber-400 font-bold text-sm sm:text-base px-2 sm:px-3 py-1 rounded-lg" id="cd-secs">59</div>
+        </div>
+        <span class="hidden sm:inline text-xs font-semibold text-[#0b0b0c] bg-black/20 px-3 py-1 rounded-full">FREE SEARCH</span>
+    </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header id="header" class="fixed top-[42px] left-0 right-0 z-50 transition-all duration-500">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+        <div class="flex items-center justify-between bg-[#121212]/80 backdrop-blur-md border border-white/5 rounded-full px-6 py-3">
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-2">
+                <div class="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center">
+                    <i data-lucide="search-dollar" class="w-5 h-5 text-[#0b0b0c]"></i>
+                </div>
+                <span class="text-lg font-semibold tracking-tight">Finderish</span>
+            </a>
+
+            <!-- Desktop Nav -->
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="text-sm text-slate-400 hover:text-white transition-colors">How It Works</a>
+                <a href="#reviews" class="text-sm text-slate-400 hover:text-white transition-colors">Reviews</a>
+                <a href="#faq" class="text-sm text-slate-400 hover:text-white transition-colors">FAQ</a>
+                <a href="#comments" class="text-sm text-slate-400 hover:text-white transition-colors">Community</a>
+            </nav>
+
+            <!-- CTA + Mobile Toggle -->
+            <div class="flex items-center gap-3">
+                <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="hidden sm:inline-flex bg-amber-500 text-[#0b0b0c] text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-amber-400 transition-all shadow-[0_10px_15px_-3px_rgba(245,158,11,0.2)] hover:shadow-[0_15px_25px_-3px_rgba(245,158,11,0.3)]">
+                    Search Free
+                </a>
+                <button id="menu-toggle" class="md:hidden w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+                    <i data-lucide="menu" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="mobile-menu md:hidden mt-2 bg-[#121212]/95 backdrop-blur-md border border-white/5 rounded-2xl">
+            <div class="p-4 flex flex-col gap-3">
+                <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="text-sm text-slate-400 hover:text-white transition-colors py-2 px-4 rounded-xl hover:bg-white/5">How It Works</a>
+                <a href="#reviews" class="text-sm text-slate-400 hover:text-white transition-colors py-2 px-4 rounded-xl hover:bg-white/5">Reviews</a>
+                <a href="#faq" class="text-sm text-slate-400 hover:text-white transition-colors py-2 px-4 rounded-xl hover:bg-white/5">FAQ</a>
+                <a href="#comments" class="text-sm text-slate-400 hover:text-white transition-colors py-2 px-4 rounded-xl hover:bg-white/5">Community</a>
+                <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="bg-amber-500 text-[#0b0b0c] text-xs font-semibold px-5 py-3 rounded-full text-center hover:bg-amber-400 transition-all mt-1">Search Free</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ===== HERO SECTION ===== -->
+<section class="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden">
+    <!-- Background Glow -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none"></div>
+    <div class="absolute top-20 right-0 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-6 w-full">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <!-- Left Content -->
+            <div class="reveal">
+                <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-8 backdrop-blur-sm">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    <span class="text-xs font-medium text-slate-300 tracking-wide">2,847 people found money today</span>
+                </div>
+
+                <h1 class="text-4xl sm:text-5xl lg:text-7xl font-medium tracking-tight leading-[1.1] mb-6">
+                    Find Your
+                    <span class="font-script text-amber-500 text-5xl sm:text-6xl lg:text-8xl block mt-2">Unclaimed</span>
+                    Money
+                </h1>
+
+                <p class="text-base sm:text-lg text-slate-400 font-light leading-relaxed max-w-lg mb-10">
+                    Over <span class="text-amber-400 font-medium">$67 billion</span> in unclaimed money is waiting for its rightful owners. Search our database for free and claim what's yours in minutes.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 mb-10">
+                    <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="pulse-glow inline-flex items-center justify-center gap-2 bg-amber-500 text-[#0b0b0c] font-semibold px-8 py-4 rounded-full hover:bg-amber-400 transition-all shadow-[0_10px_15px_-3px_rgba(245,158,11,0.2)] hover:shadow-[0_20px_30px_-3px_rgba(245,158,11,0.4)] text-sm">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        Start Free Search
+                    </a>
+                    <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="inline-flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white font-medium px-8 py-4 rounded-full hover:bg-white/10 transition-all text-sm backdrop-blur-sm">
+                        <i data-lucide="play-circle" class="w-4 h-4 text-amber-500"></i>
+                        How It Works
+                    </a>
+                </div>
+
+                <!-- Trust Badges -->
+                <div class="flex items-center gap-6 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <div class="flex -space-x-2">
+                            <img src="https://picsum.photos/seed/user1/40/40.jpg" class="w-8 h-8 rounded-full border-2 border-[#0b0b0c] object-cover" alt="">
+                            <img src="https://picsum.photos/seed/user2/40/40.jpg" class="w-8 h-8 rounded-full border-2 border-[#0b0b0c] object-cover" alt="">
+                            <img src="https://picsum.photos/seed/user3/40/40.jpg" class="w-8 h-8 rounded-full border-2 border-[#0b0b0c] object-cover" alt="">
+                            <img src="https://picsum.photos/seed/user4/40/40.jpg" class="w-8 h-8 rounded-full border-2 border-[#0b0b0c] object-cover" alt="">
+                        </div>
+                        <span class="text-xs text-slate-400">50K+ users</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="flex gap-0.5 star-glow">
+                            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                        </div>
+                        <span class="text-xs text-slate-400">4.9/5</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-green-400"></i>
+                        <span class="text-xs text-slate-400">SSL Secured</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Images -->
+            <div class="reveal-right relative">
+                <div class="relative">
+                    <!-- Main Image -->
+                    <div class="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                        <img src="https://picsum.photos/seed/money-found/600/500.jpg" class="w-full h-[400px] lg:h-[500px] object-cover" alt="People finding unclaimed money">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0b0b0c] via-transparent to-transparent"></div>
+                        <!-- Floating Card -->
+                        <div class="absolute bottom-6 left-6 right-6 bg-[#121212]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 float">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="dollar-sign" class="w-6 h-6 text-green-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">$3,247.50 Found!</p>
+                                    <p class="text-xs text-slate-400">Sarah M. — Claimed 2 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating Badge Top Right -->
+                    <div class="absolute -top-4 -right-4 bg-amber-500 text-[#0b0b0c] rounded-2xl px-4 py-3 shadow-lg" style="animation: float 4s ease-in-out infinite 0.5s;">
+                        <p class="text-xs font-bold">$67B+</p>
+                        <p class="text-[10px] font-medium opacity-70">Unclaimed</p>
+                    </div>
+
+                    <!-- Small Image Bottom Left -->
+                    <div class="hidden lg:block absolute -bottom-6 -left-6 w-40 h-40 rounded-2xl overflow-hidden border-2 border-amber-500/30 shadow-xl" style="animation: float 5s ease-in-out infinite 1s;">
+                        <img src="https://picsum.photos/seed/happy-person/200/200.jpg" class="w-full h-full object-cover" alt="Happy user">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== MONTHLY USERS SECTION ===== -->
+<section class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/[0.03] to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="reveal text-center mb-16">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+                <i data-lucide="trending-up" class="w-3.5 h-3.5 text-amber-500"></i>
+                <span class="text-xs font-medium text-slate-300 tracking-wide uppercase">Growing Community</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight mb-4">
+                Trusted by <span class="text-amber-500">Thousands</span> Monthly
+            </h2>
+            <p class="text-slate-400 font-light max-w-2xl mx-auto">Our user base grows every day as more people discover money they never knew they had.</p>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 stagger">
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 text-center hover:border-white/10 transition-all duration-300 group">
+                <div class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-amber-500/20 transition-colors">
+                    <i data-lucide="users" class="w-5 h-5 text-amber-500"></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-semibold text-white mb-1" data-count="52480">0</p>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">Monthly Users</p>
+            </div>
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 text-center hover:border-white/10 transition-all duration-300 group">
+                <div class="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-green-500/20 transition-colors">
+                    <i data-lucide="wallet" class="w-5 h-5 text-green-500"></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-semibold text-white mb-1">$<span data-count="12">0</span>M+</p>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">Claimed This Month</p>
+            </div>
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 text-center hover:border-white/10 transition-all duration-300 group">
+                <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-500/20 transition-colors">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-semibold text-white mb-1" data-count="50">0</p>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">States Covered</p>
+            </div>
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 text-center hover:border-white/10 transition-all duration-300 group">
+                <div class="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-500/20 transition-colors">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-purple-500"></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-semibold text-white mb-1" data-count="98">0</p>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">Success Rate %</p>
+            </div>
+        </div>
+
+        <!-- Monthly Chart Visual -->
+        <div class="reveal mt-12 bg-[#121212] border border-white/5 rounded-2xl p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-sm font-medium">Monthly Growth</h3>
+                    <p class="text-xs text-slate-500 mt-1">User signups over last 6 months</p>
+                </div>
+                <span class="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full font-medium">+34% ↑</span>
+            </div>
+            <div class="flex items-end gap-2 sm:gap-3 h-40">
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full bg-amber-500/20 rounded-t-lg progress-animated" style="height: 40%;"></div>
+                    <span class="text-[10px] text-slate-500">Jul</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full bg-amber-500/30 rounded-t-lg progress-animated" style="height: 55%; animation-delay: 0.2s;"></div>
+                    <span class="text-[10px] text-slate-500">Aug</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full bg-amber-500/40 rounded-t-lg progress-animated" style="height: 50%; animation-delay: 0.4s;"></div>
+                    <span class="text-[10px] text-slate-500">Sep</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full bg-amber-500/50 rounded-t-lg progress-animated" style="height: 70%; animation-delay: 0.6s;"></div>
+                    <span class="text-[10px] text-slate-500">Oct</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full bg-amber-500/70 rounded-t-lg progress-animated" style="height: 85%; animation-delay: 0.8s;"></div>
+                    <span class="text-[10px] text-slate-500">Nov</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full bg-amber-500 rounded-t-lg progress-animated" style="height: 100%; animation-delay: 1s;"></div>
+                    <span class="text-[10px] text-slate-500 font-medium text-amber-400">Dec</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how" class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="reveal text-center mb-16">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
+                <span class="text-xs font-medium text-slate-300 tracking-wide uppercase">Simple Process</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight mb-4">
+                How It <span class="font-script text-amber-500">Works</span>
+            </h2>
+            <p class="text-slate-400 font-light max-w-2xl mx-auto">Three simple steps to find and claim money that belongs to you.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 stagger">
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 text-[80px] font-bold text-white/[0.02] leading-none">01</div>
+                <div class="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-amber-500/20 transition-colors">
+                    <i data-lucide="user-search" class="w-6 h-6 text-amber-500"></i>
+                </div>
+                <h3 class="text-lg font-medium tracking-tight mb-3">Enter Your Name</h3>
+                <p class="text-sm text-slate-400 font-light leading-relaxed">Type your first and last name into our secure search form. No account needed.</p>
+            </div>
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 text-[80px] font-bold text-white/[0.02] leading-none">02</div>
+                <div class="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-amber-500/20 transition-colors">
+                    <i data-lucide="database" class="w-6 h-6 text-amber-500"></i>
+                </div>
+                <h3 class="text-lg font-medium tracking-tight mb-3">Search Database</h3>
+                <p class="text-sm text-slate-400 font-light leading-relaxed">We scan millions of government and financial records across all 50 states instantly.</p>
+            </div>
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-500 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 text-[80px] font-bold text-white/[0.02] leading-none">03</div>
+                <div class="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500/20 transition-colors">
+                    <i data-lucide="hand-coins" class="w-6 h-6 text-green-500"></i>
+                </div>
+                <h3 class="text-lg font-medium tracking-tight mb-3">Claim Your Money</h3>
+                <p class="text-sm text-slate-400 font-light leading-relaxed">If found, we guide you through the simple claim process. Most claims take 2-4 weeks.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FULL WIDTH IMAGE DIVIDER ===== -->
+<section class="relative h-[300px] sm:h-[400px] overflow-hidden">
+    <img src="https://picsum.photos/seed/financial-success/1400/400.jpg" class="w-full h-full object-cover" alt="Financial freedom">
+    <div class="absolute inset-0 bg-gradient-to-b from-[#0b0b0c] via-[#0b0b0c]/60 to-[#0b0b0c]"></div>
+    <div class="absolute inset-0 flex items-center justify-center">
+        <div class="reveal text-center px-6">
+            <p class="font-script text-amber-500 text-2xl sm:text-3xl mb-2">Average claim amount</p>
+            <p class="text-4xl sm:text-6xl font-semibold tracking-tight">$2,847</p>
+            <p class="text-sm text-slate-400 mt-3">Based on claims processed in the last 30 days</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===== 5-STAR REVIEWS SECTION ===== -->
+<section id="reviews" class="py-24 relative">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[150px] pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="reveal text-center mb-16">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i>
+                <span class="text-xs font-medium text-slate-300 tracking-wide uppercase">5-Star Reviews</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight mb-4">
+                Real People, <span class="font-script text-amber-500">Real Results</span>
+            </h2>
+            <p class="text-slate-400 font-light max-w-2xl mx-auto">Don't just take our word for it. See what our users have to say about finding their money.</p>
+        </div>
+
+        <!-- Reviews Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
+            <!-- Review 1 -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 transition-all duration-500 group">
+                <div class="flex gap-0.5 mb-4 star-glow">
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                </div>
+                <p class="text-sm text-slate-300 font-light leading-relaxed mb-6">"I was skeptical at first, but Finderish found $4,320 from an old bank account I completely forgot about. The claim process was super easy. Money arrived in 3 weeks!"</p>
+                <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <img src="https://picsum.photos/seed/reviewer1/48/48.jpg" class="w-10 h-10 rounded-full object-cover" alt="">
+                    <div>
+                        <p class="text-sm font-medium">Sarah Mitchell</p>
+                        <p class="text-xs text-slate-500">Austin, TX • Claimed $4,320</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] text-green-400 bg-green-500/10 px-2 py-1 rounded-full font-medium">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 2 -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 transition-all duration-500 group">
+                <div class="flex gap-0.5 mb-4 star-glow">
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                </div>
+                <p class="text-sm text-slate-300 font-light leading-relaxed mb-6">"Found money from my grandmother's insurance policy that I didn't know existed. $8,750! This service is absolutely legitimate and free to search. Thank you Finderish!"</p>
+                <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <img src="https://picsum.photos/seed/reviewer2/48/48.jpg" class="w-10 h-10 rounded-full object-cover" alt="">
+                    <div>
+                        <p class="text-sm font-medium">James Rodriguez</p>
+                        <p class="text-xs text-slate-500">Miami, FL • Claimed $8,750</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] text-green-400 bg-green-500/10 px-2 py-1 rounded-full font-medium">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 3 -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 transition-all duration-500 group">
+                <div class="flex gap-0.5 mb-4 star-glow">
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                </div>
+                <p class="text-sm text-slate-300 font-light leading-relaxed mb-6">"My wife told me to try it and I laughed. Then I found $1,200 from an old utility deposit. Took me 5 minutes to submit the claim. Best free search ever!"</p>
+                <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <img src="https://picsum.photos/seed/reviewer3/48/48.jpg" class="w-10 h-10 rounded-full object-cover" alt="">
+                    <div>
+                        <p class="text-sm font-medium">David Chen</p>
+                        <p class="text-xs text-slate-500">Seattle, WA • Claimed $1,200</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] text-green-400 bg-green-500/10 px-2 py-1 rounded-full font-medium">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 4 -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 transition-all duration-500 group">
+                <div class="flex gap-0.5 mb-4 star-glow">
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                </div>
+                <p class="text-sm text-slate-300 font-light leading-relaxed mb-6">"As a college student, finding $640 from a forgotten scholarship fund was life-changing. The process was straightforward and Finderish support was amazing."</p>
+                <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <img src="https://picsum.photos/seed/reviewer4/48/48.jpg" class="w-10 h-10 rounded-full object-cover" alt="">
+                    <div>
+                        <p class="text-sm font-medium">Emily Watson</p>
+                        <p class="text-xs text-slate-500">Chicago, IL • Claimed $640</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] text-green-400 bg-green-500/10 px-2 py-1 rounded-full font-medium">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 5 -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 transition-all duration-500 group">
+                <div class="flex gap-0.5 mb-4 star-glow">
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                </div>
+                <p class="text-sm text-slate-300 font-light leading-relaxed mb-6">"Found unclaimed dividends from stocks my dad bought for me 20 years ago. $15,200! I literally cried. Finderish is the real deal. 100% recommend to everyone."</p>
+                <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <img src="https://picsum.photos/seed/reviewer5/48/48.jpg" class="w-10 h-10 rounded-full object-cover" alt="">
+                    <div>
+                        <p class="text-sm font-medium">Michael Thompson</p>
+                        <p class="text-xs text-slate-500">Denver, CO • Claimed $15,200</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] text-green-400 bg-green-500/10 px-2 py-1 rounded-full font-medium">Verified</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 6 -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 transition-all duration-500 group">
+                <div class="flex gap-0.5 mb-4 star-glow">
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                    <i data-lucide="star" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                </div>
+                <p class="text-sm text-slate-300 font-light leading-relaxed mb-6">"Searched for my whole family. My husband found $2,100, I found $380, and even my mom found $950! We're telling everyone we know. Absolutely wonderful service."</p>
+                <div class="flex items-center gap-3 pt-4 border-t border-white/5">
+                    <img src="https://picsum.photos/seed/reviewer6/48/48.jpg" class="w-10 h-10 rounded-full object-cover" alt="">
+                    <div>
+                        <p class="text-sm font-medium">Lisa Park</p>
+                        <p class="text-xs text-slate-500">Portland, OR • Claimed $380</p>
+                    </div>
+                    <div class="ml-auto">
+                        <span class="text-[10px] text-green-400 bg-green-500/10 px-2 py-1 rounded-full font-medium">Verified</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FAQ SECTION ===== -->
+<section id="faq" class="py-24 relative">
+    <div class="max-w-3xl mx-auto px-6">
+        <div class="reveal text-center mb-16">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+                <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-500"></i>
+                <span class="text-xs font-medium text-slate-300 tracking-wide uppercase">Got Questions?</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight mb-4">
+                Frequently Asked <span class="font-script text-amber-500">Questions</span>
+            </h2>
+        </div>
+
+        <div class="space-y-3 stagger" id="faq-container">
+            <div class="reveal faq-item bg-[#141414] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left">
+                    <span class="text-sm sm:text-base font-medium pr-4">Is Finderish really free to use?</span>
+                    <i data-lucide="plus" class="w-5 h-5 text-slate-500 flex-shrink-0 faq-icon transition-transform duration-300"></i>
+                </button>
+                <div class="faq-content max-h-0 overflow-hidden transition-all duration-500">
+                    <p class="px-6 pb-6 text-sm text-slate-400 font-light leading-relaxed">Yes! Our basic search is 100% free. You can search our database and see if there's unclaimed money under your name at no cost. We only charge a small fee if you choose to use our premium claim assistance service, which is completely optional.</p>
+                </div>
+            </div>
+
+            <div class="reveal faq-item bg-[#141414] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left">
+                    <span class="text-sm sm:text-base font-medium pr-4">Where does this unclaimed money come from?</span>
+                    <i data-lucide="plus" class="w-5 h-5 text-slate-500 flex-shrink-0 faq-icon transition-transform duration-300"></i>
+                </button>
+                <div class="faq-content max-h-0 overflow-hidden transition-all duration-500">
+                    <p class="px-6 pb-6 text-sm text-slate-400 font-light leading-relaxed">Unclaimed money comes from various sources: forgotten bank accounts, uncashed checks, insurance policies, utility deposits, stock dividends, safe deposit box contents, and government refunds. When the owner can't be located, these funds are turned over to state governments.</p>
+                </div>
+            </div>
+
+            <div class="reveal faq-item bg-[#141414] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left">
+                    <span class="text-sm sm:text-base font-medium pr-4">How long does it take to receive my money?</span>
+                    <i data-lucide="plus" class="w-5 h-5 text-slate-500 flex-shrink-0 faq-icon transition-transform duration-300"></i>
+                </button>
+                <div class="faq-content max-h-0 overflow-hidden transition-all duration-500">
+                    <p class="px-6 pb-6 text-sm text-slate-400 font-light leading-relaxed">Most claims are processed within 2-4 weeks, though some complex claims can take up to 90 days. The timeline depends on the state agency and the type of claim. We provide tracking so you can monitor your claim status.</p>
+                </div>
+            </div>
+
+            <div class="reveal faq-item bg-[#141414] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left">
+                    <span class="text-sm sm:text-base font-medium pr-4">Is my personal information safe?</span>
+                    <i data-lucide="plus" class="w-5 h-5 text-slate-500 flex-shrink-0 faq-icon transition-transform duration-300"></i>
+                </button>
+                <div class="faq-content max-h-0 overflow-hidden transition-all duration-500">
+                    <p class="px-6 pb-6 text-sm text-slate-400 font-light leading-relaxed">Absolutely. We use 256-bit SSL encryption and never store your sensitive data. Your search is anonymous, and we don't share your information with third parties. We're GDPR and CCPA compliant.</p>
+                </div>
+            </div>
+
+            <div class="reveal faq-item bg-[#141414] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left">
+                    <span class="text-sm sm:text-base font-medium pr-4">What if I have a common name?</span>
+                    <i data-lucide="plus" class="w-5 h-5 text-slate-500 flex-shrink-0 faq-icon transition-transform duration-300"></i>
+                </button>
+                <div class="faq-content max-h-0 overflow-hidden transition-all duration-500">
+                    <p class="px-6 pb-6 text-sm text-slate-400 font-light leading-relaxed">For common names, you may see multiple results. You can narrow results by adding your state, city, or middle initial. Our system uses additional matching criteria like previous addresses to help identify the correct claims.</p>
+                </div>
+            </div>
+
+            <div class="reveal faq-item bg-[#141414] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left">
+                    <span class="text-sm sm:text-base font-medium pr-4">Can I search for deceased relatives?</span>
+                    <i data-lucide="plus" class="w-5 h-5 text-slate-500 flex-shrink-0 faq-icon transition-transform duration-300"></i>
+                </button>
+                <div class="faq-content max-h-0 overflow-hidden transition-all duration-500">
+                    <p class="px-6 pb-6 text-sm text-slate-400 font-light leading-relaxed">Yes! If you're the legal heir, you can search for and claim unclaimed money belonging to deceased family members. You'll need to provide proof of your relationship and legal authority to claim on their behalf.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== COMMENTS SECTION ===== -->
+<section id="comments" class="py-24 relative">
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[150px] pointer-events-none"></div>
+    <div class="max-w-3xl mx-auto px-6">
+        <div class="reveal text-center mb-16">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-500"></i>
+                <span class="text-xs font-medium text-slate-300 tracking-wide uppercase">Community</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight mb-4">
+                Share Your <span class="font-script text-amber-500">Experience</span>
+            </h2>
+            <p class="text-slate-400 font-light">Join the conversation. Tell us about your experience or ask questions.</p>
+        </div>
+
+        <!-- Comment Input -->
+        <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-6 mb-8">
+            <div class="flex gap-4">
+                <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="user" class="w-5 h-5 text-amber-500"></i>
+                </div>
+                <div class="flex-1">
+                    <input type="text" id="comment-name" placeholder="Your name" class="w-full bg-[#1e1e1e] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-300/50 mb-3 transition-all">
+                    <textarea id="comment-text" rows="3" placeholder="Share your experience or ask a question..." class="w-full bg-[#1e1e1e] border border-white/5 rounded-lg px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-300/50 resize-none transition-all"></textarea>
+                    <div class="flex items-center justify-between mt-3">
+                        <div class="flex items-center gap-2">
+                            <button class="reaction-btn flex items-center gap-1 bg-white/5 rounded-full px-3 py-1.5 text-xs text-slate-400 hover:bg-amber-500/10 hover:text-amber-400 transition-all" data-emoji="👍">👍 <span>Like</span></button>
+                        </div>
+                        <button id="post-comment" class="bg-amber-500 text-[#0b0b0c] text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-amber-400 transition-all shadow-[0_10px_15px_-3px_rgba(245,158,11,0.2)]">
+                            Post Comment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-list" class="space-y-4">
+            <!-- Existing Comments -->
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-colors">
+                <div class="flex items-start gap-3">
+                    <img src="https://picsum.photos/seed/commenter1/48/48.jpg" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-medium">Rebecca Johnson</span>
+                            <span class="text-[10px] text-slate-500">2 hours ago</span>
+                        </div>
+                        <p class="text-sm text-slate-300 font-light leading-relaxed mb-3">Just found $890 from an old apartment security deposit! This is amazing. I moved out 6 years ago and had no idea. Thank you Finderish!! 🎉</p>
+                        <div class="flex items-center gap-4">
+                            <button class="like-btn flex items-center gap-1 text-xs text-slate-500 hover:text-amber-400 transition-colors">
+                                <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                                <span class="like-count">24</span>
+                            </button>
+                            <button class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-colors">
+                <div class="flex items-start gap-3">
+                    <img src="https://picsum.photos/seed/commenter2/48/48.jpg" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-medium">Mark Stevens</span>
+                            <span class="text-[10px] text-slate-500">5 hours ago</span>
+                        </div>
+                        <p class="text-sm text-slate-300 font-light leading-relaxed mb-3">Quick question — can I search for my business name too? I had a small LLC that I closed a few years back.</p>
+                        <div class="flex items-center gap-4">
+                            <button class="like-btn flex items-center gap-1 text-xs text-slate-500 hover:text-amber-400 transition-colors">
+                                <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                                <span class="like-count">8</span>
+                            </button>
+                            <button class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal bg-[#121212] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-colors">
+                <div class="flex items-start gap-3">
+                    <img src="https://picsum.photos/seed/commenter3/48/48.jpg" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-medium">Angela Brooks</span>
+                            <span class="text-[10px] text-slate-500">8 hours ago</span>
+                            <span class="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-medium">Found $3,450</span>
+                        </div>
+                        <p class="text-sm text-slate-300 font-light leading-relaxed mb-3">I searched for my entire family at Thanksgiving dinner. We found a combined $12,400! It was the most productive Thanksgiving ever 😂💰</p>
+                        <div class="flex items-center gap-4">
+                            <button class="like-btn flex items-center gap-1 text-xs text-slate-500 hover:text-amber-400 transition-colors">
+                                <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                                <span class="like-count">67</span>
+                            </button>
+                            <button class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FORM SECTION ===== -->
+<section id="form" class="py-24 relative">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/[0.03] to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <!-- Left Content -->
+            <div class="reveal-left">
+                <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-amber-500"></i>
+                    <span class="text-xs font-medium text-slate-300 tracking-wide uppercase">Free Search</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight mb-6">
+                    Start Your <span class="font-script text-amber-500">Search</span> Now
+                </h2>
+                <p class="text-slate-400 font-light leading-relaxed mb-10 max-w-md">
+                    Enter your details below and we'll search our entire database of over 67 million unclaimed property records. It takes less than 30 seconds.
+                </p>
+
+                <div class="space-y-5">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-amber-500"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium mb-1">100% Secure & Private</h4>
+                            <p class="text-xs text-slate-500 font-light">Your information is encrypted and never shared.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i data-lucide="clock" class="w-5 h-5 text-amber-500"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium mb-1">Results in 30 Seconds</h4>
+                            <p class="text-xs text-slate-500 font-light">Instant search across all 50 state databases.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i data-lucide="badge-dollar-sign" class="w-5 h-5 text-green-500"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium mb-1">No Credit Card Required</h4>
+                            <p class="text-xs text-slate-500 font-light">Basic search is completely free, no strings attached.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live activity -->
+                <div class="mt-10 flex items-center gap-3 bg-[#121212] border border-white/5 rounded-xl p-4">
+                    <div class="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></div>
+                    <p class="text-xs text-slate-400"><span class="text-white font-medium" id="live-count">147</span> people are searching right now</p>
+                </div>
+            </div>
+
+            <!-- Right Form -->
+            <div class="reveal-right">
+                <div class="bg-[#121212] border border-white/5 rounded-3xl p-8 sm:p-10 relative overflow-hidden">
+                    <!-- Form glow -->
+                    <div class="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+                    <form id="search-form" class="space-y-5 relative">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-2 font-medium">First Name *</label>
+                            <input type="text" id="form-first" required placeholder="Enter your first name" class="w-full bg-[#1a1a1a] border border-white/5 rounded-lg px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-300/50 focus:border-amber-500/30 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-2 font-medium">Last Name *</label>
+                            <input type="text" id="form-last" required placeholder="Enter your last name" class="w-full bg-[#1a1a1a] border border-white/5 rounded-lg px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-300/50 focus:border-amber-500/30 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-2 font-medium">Email Address *</label>
+                            <input type="email" id="form-email" required placeholder="your@email.com" class="w-full bg-[#1a1a1a] border border-white/5 rounded-lg px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-300/50 focus:border-amber-500/30 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-2 font-medium">State <span class="text-slate-600">(optional)</span></label>
+                            <select id="form-state" class="w-full bg-[#1a1a1a] border border-white/5 rounded-lg px-4 py-3.5 text-sm text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-300/50 focus:border-amber-500/30 transition-all appearance-none cursor-pointer">
+                                <option value="">Select your state</option>
+                                <option value="AL">Alabama</option><option value="AK">Alaska</option>
+                                <option value="AZ">Arizona</option><option value="AR">Arkansas</option>
+                                <option value="CA">California</option><option value="CO">Colorado</option>
+                                <option value="CT">Connecticut</option><option value="DE">Delaware</option>
+                                <option value="FL">Florida</option><option value="GA">Georgia</option>
+                                <option value="HI">Hawaii</option><option value="ID">Idaho</option>
+                                <option value="IL">Illinois</option><option value="IN">Indiana</option>
+                                <option value="IA">Iowa</option><option value="KS">Kansas</option>
+                                <option value="KY">Kentucky</option><option value="LA">Louisiana</option>
+                                <option value="ME">Maine</option><option value="MD">Maryland</option>
+                                <option value="MA">Massachusetts</option><option value="MI">Michigan</option>
+                                <option value="MN">Minnesota</option><option value="MS">Mississippi</option>
+                                <option value="MO">Missouri</option><option value="MT">Montana</option>
+                                <option value="NE">Nebraska</option><option value="NV">Nevada</option>
+                                <option value="NH">New Hampshire</option><option value="NJ">New Jersey</option>
+                                <option value="NM">New Mexico</option><option value="NY">New York</option>
+                                <option value="NC">North Carolina</option><option value="ND">North Dakota</option>
+                                <option value="OH">Ohio</option><option value="OK">Oklahoma</option>
+                                <option value="OR">Oregon</option><option value="PA">Pennsylvania</option>
+                                <option value="RI">Rhode Island</option><option value="SC">South Carolina</option>
+                                <option value="SD">South Dakota</option><option value="TN">Tennessee</option>
+                                <option value="TX">Texas</option><option value="UT">Utah</option>
+                                <option value="VT">Vermont</option><option value="VA">Virginia</option>
+                                <option value="WA">Washington</option><option value="WV">West Virginia</option>
+                                <option value="WI">Wisconsin</option><option value="WY">Wyoming</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-start gap-3 pt-1">
+                            <input type="checkbox" id="form-agree" class="mt-1 accent-amber-500 cursor-pointer" required>
+                            <label for="form-agree" class="text-xs text-slate-500 font-light leading-relaxed cursor-pointer">I agree to the <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="text-amber-500 hover:text-amber-400 transition-colors">Terms of Service</a> and <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="text-amber-500 hover:text-amber-400 transition-colors">Privacy Policy</a></label>
+                        </div>
+
+                        <button type="submit" id="search-btn" class="w-full bg-amber-500 text-[#0b0b0c] font-semibold py-4 rounded-xl hover:bg-amber-400 transition-all shadow-[0_10px_15px_-3px_rgba(245,158,11,0.2)] hover:shadow-[0_20px_30px_-3px_rgba(245,158,11,0.4)] text-sm flex items-center justify-center gap-2">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                            Search for My Money
+                        </button>
+
+                        <p class="text-center text-[10px] text-slate-600 mt-3">
+                            <i data-lucide="lock" class="w-3 h-3 inline-block mr-1"></i>
+                            256-bit SSL encrypted • No credit card needed • Results in 30 seconds
+                        </p>
+                    </form>
+
+                    <!-- Success State (hidden by default) -->
+                    <div id="form-success" class="hidden text-center py-8">
+                        <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i data-lucide="check-circle" class="w-10 h-10 text-green-400"></i>
+                        </div>
+                        <h3 class="text-xl font-medium mb-2">Search Submitted!</h3>
+                        <p class="text-sm text-slate-400 font-light mb-6 max-w-sm mx-auto">We're scanning our database now. Check your email for results within the next few minutes.</p>
+                        <button onclick="resetForm()" class="text-amber-500 text-sm font-medium hover:text-amber-400 transition-colors">Search Again →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="border-t border-white/5 pt-20 pb-10">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="grid lg:grid-cols-2 gap-16 lg:gap-32 mb-16">
+            <!-- Left -->
+            <div>
+                <a href="https://www.af9m8trk.com/S1C11N8N/UXF123DZ/?s1=masum" class="flex items-center gap-2 mb-6">
+                    <div class="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center">
+                        <i data-lucide="search-dollar" class="w-5 h-5 text-[#0b0b0c]"></i>
+                    </div>
+                    <span class="text-lg font-semibold tracking-tight">Finderish</span>
+                </a>
+                <p class="text-sm text-slate-500 font-light leading-relaxed max-w-sm mb-6">Helping Americans find and claim their unclaimed money since 2019. Over $67 billion is waiting to be found.</p>
+                <div class="flex items-center gap-3">
+                    <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                        <i data-lucide="twitter" class="w-4 h-4 text-slate-400"></i>
+                    </a>
+                    <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                        <i data-lucide="facebook" class="w-4 h-4 text-slate-400"></i>
+                    </a>
+                    <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                        <i data-lucide="instagram" class="w-4 h-4 text-slate-400"></i>
+                    </a>
+                    <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                        <i data-lucide="youtube" class="w-4 h-4 text-slate-400"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right -->
+            <div class="grid grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-xs font-medium uppercase tracking-wider text-slate-400 mb-5">Company</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">How It Works</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Pricing</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Careers</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-medium uppercase tracking-wider text-slate-400 mb-5">Support</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="#" class="text-sm text-slate-500 hover:text-white transition-colors">Do Not Sell My Info</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom -->
+        <div class="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-xs text-slate-600">© 2025 Finderish. All rights reserved.</p>
+            <div class="flex items-center gap-4">
+                <span class="text-[10px] text-slate-600 bg-white/5 px-3 py-1 rounded-full">🔒 SSL Secured</span>
+                <span class="text-[10px] text-slate-600 bg-white/5 px-3 py-1 rounded-full">GDPR Compliant</span>
+                <span class="text-[10px] text-slate-600 bg-white/5 px-3 py-1 rounded-full">CCPA Compliant</span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ===== COUNTDOWN TIMER =====
+    (function() {
+        let totalSeconds = 2 * 24 * 3600 + 0 * 60 + 0; // 2 days
+
+        function update() {
+            if (totalSeconds <= 0) return;
+            totalSeconds--;
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            document.getElementById('cd-hours').textContent = String(h).padStart(2, '0');
+            document.getElementById('cd-mins').textContent = String(m).padStart(2, '0');
+            document.getElementById('cd-secs').textContent = String(s).padStart(2, '0');
+        }
+        setInterval(update, 1000);
+    })();
+
+    // ===== SCROLL REVEAL =====
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                // Counter animation
+                const counters = entry.target.querySelectorAll('[data-count]');
+                counters.forEach(counter => {
+                    if (counter.dataset.animated) return;
+                    counter.dataset.animated = 'true';
+                    const target = parseInt(counter.dataset.count);
+                    const duration = 2000;
+                    const step = target / (duration / 16);
+                    let current = 0;
+                    const timer = setInterval(() => {
+                        current += step;
+                        if (current >= target) {
+                            current = target;
+                            clearInterval(timer);
+                        }
+                        counter.textContent = Math.floor(current).toLocaleString();
+                    }, 16);
+                });
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale, .stagger').forEach(el => {
+        observer.observe(el);
+    });
+
+    // ===== HEADER SCROLL EFFECT =====
+    const header = document.getElementById('header');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 100) {
+            header.style.top = '0px';
+            header.querySelector('div > div').style.padding = '8px 24px';
+            header.querySelector('div > div').style.background = 'rgba(11,11,12,0.95)';
+        } else {
+            header.style.top = '42px';
+            header.querySelector('div > div').style.padding = '12px 24px';
+            header.querySelector('div > div').style.background = 'rgba(18,18,18,0.8)';
+        }
+    });
+
+    // ===== MOBILE MENU =====
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    menuToggle.addEventListener('click', () => {
+        mobileMenu.classList.toggle('open');
+    });
+    // Close menu on link click
+    mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => mobileMenu.classList.remove('open'));
+    });
+
+    // ===== FAQ ACCORDION =====
+    document.querySelectorAll('.faq-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.closest('.faq-item');
+            const content = item.querySelector('.faq-content');
+            const icon = btn.querySelector('.faq-icon');
+            const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+
+            // Close all
+            document.querySelectorAll('.faq-content').forEach(c => c.style.maxHeight = '0px');
+            document.querySelectorAll('.faq-icon').forEach(i => i.style.transform = 'rotate(0deg)');
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('border-amber-500/20'));
+
+            if (!isOpen) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.style.transform = 'rotate(45deg)';
+                item.classList.add('border-amber-500/20');
+            }
+        });
+    });
+
+    // ===== TOAST =====
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    // ===== COMMENT POSTING =====
+    document.getElementById('post-comment').addEventListener('click', () => {
+        const name = document.getElementById('comment-name').value.trim();
+        const text = document.getElementById('comment-text').value.trim();
+
+        if (!name || !text) {
+            showToast('Please fill in both your name and comment.');
+            return;
+        }
+
+        const seed = 'newuser' + Date.now();
+        const html = `
+            <div class="bg-[#121212] border border-amber-500/20 rounded-2xl p-5 transition-all" style="animation: fadeIn 0.5s ease-out;">
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-xs font-semibold text-amber-400">${name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-medium">${name}</span>
+                            <span class="text-[10px] text-slate-500">Just now</span>
+                            <span class="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full font-medium">New</span>
+                        </div>
+                        <p class="text-sm text-slate-300 font-light leading-relaxed mb-3">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                        <div class="flex items-center gap-4">
+                            <button class="like-btn flex items-center gap-1 text-xs text-slate-500 hover:text-amber-400 transition-colors">
+                                <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                                <span class="like-count">0</span>
+                            </button>
+                            <button class="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const list = document.getElementById('comments-list');
+        list.insertAdjacentHTML('afterbegin', html);
+        lucide.createIcons();
+
+        document.getElementById('comment-name').value = '';
+        document.getElementById('comment-text').value = '';
+        showToast('Comment posted successfully!');
+
+        // Re-attach like handlers
+        attachLikeHandlers();
+    });
+
+    // ===== LIKE BUTTONS =====
+    function attachLikeHandlers() {
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.onclick = function() {
+                const countEl = this.querySelector('.like-count');
+                let count = parseInt(countEl.textContent);
+                if (this.classList.contains('liked')) {
+                    count--;
+                    this.classList.remove('liked', 'text-amber-400');
+                    this.classList.add('text-slate-500');
+                } else {
+                    count++;
+                    this.classList.add('liked', 'text-amber-400');
+                    this.classList.remove('text-slate-500');
+                }
+                countEl.textContent = count;
+            };
+        });
+    }
+    attachLikeHandlers();
+
+    // ===== FORM SUBMISSION =====
+    document.getElementById('search-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('search-btn');
+        btn.innerHTML = '<svg class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75"></path></svg> Searching...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            this.classList.add('hidden');
+            document.getElementById('form-success').classList.remove('hidden');
+            lucide.createIcons();
+            showToast('Search submitted! Check your email for results.');
+        }, 2500);
+    });
+
+    function resetForm() {
+        document.getElementById('search-form').classList.remove('hidden');
+        document.getElementById('search-form').reset();
+        document.getElementById('form-success').classList.add('hidden');
+        const btn = document.getElementById('search-btn');
+        btn.innerHTML = '<i data-lucide="search" class="w-4 h-4"></i> Search for My Money';
+        btn.disabled = false;
+        lucide.createIcons();
+    }
+
+    // ===== LIVE COUNTER =====
+    setInterval(() => {
+        const el = document.getElementById('live-count');
+        let val = parseInt(el.textContent);
+        val += Math.floor(Math.random() * 5) - 2;
+        if (val < 100) val = 100;
+        if (val > 300) val = 300;
+        el.textContent = val;
+    }, 3000);
+
+    // ===== REACTION BUTTONS =====
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const span = btn.querySelector('span');
+            if (btn.classList.contains('reacted')) {
+                btn.classList.remove('reacted', 'bg-amber-500/20', 'text-amber-400');
+                btn.classList.add('bg-white/5', 'text-slate-400');
+                span.textContent = 'Like';
+            } else {
+                btn.classList.add('reacted', 'bg-amber-500/20', 'text-amber-400');
+                btn.classList.remove('bg-white/5', 'text-slate-400');
+                span.textContent = 'Liked!';
+            }
+        });
+    });
+
+    // ===== SMOOTH SCROLL for anchor links =====
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', function(e) {
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                e.preventDefault();
+                const offset = 100;
+                const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                window.scrollTo({ top, behavior: 'smooth' });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
